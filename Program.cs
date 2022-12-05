@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.Office.Interop.Word;
+
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
 using Syncfusion.Pdf;
@@ -24,25 +26,15 @@ public static class TestClass
         Console.WriteLine($"Hello {name}!");
         return $"Hello {name}!";
     }
+    public static Microsoft.Office.Interop.Word.Document wordDocument { get; set; }
     public static string DocToPdf(string base64)
     {
-        using (MemoryStream docStream = new(Convert.FromBase64String(base64)))
-        using (MemoryStream pdfStream = new())
-        {
+        string docPath = "temp.docx", pdfPath = "temp.pdf";
+        File.WriteAllBytes(docPath, Convert.FromBase64String(base64));
+        Microsoft.Office.Interop.Word.Application appWord = new Microsoft.Office.Interop.Word.Application();
+        wordDocument = appWord.Documents.Open(docPath);
+        wordDocument.ExportAsFixedFormat(pdfPath, WdExportFormat.wdExportFormatPDF);
 
-            //Creates a new Word document.
-            WordDocument wordDocument = new WordDocument(docStream, Syncfusion.DocIO.FormatType.Docx);
-            //Create instance for DocIORenderer for Word to PDF conversion
-            DocIORenderer render = new DocIORenderer();
-            //Converts Word document to PDF.
-            PdfDocument pdfDocument = render.ConvertToPDF(wordDocument);
-            //Release the resources used by the Word document and DocIO Renderer objects.
-            render.Dispose();
-            wordDocument.Dispose();
-            pdfDocument.Save(pdfStream);
-            //Closes the instance of PDF document object.
-            pdfDocument.Close();
-            return Convert.ToBase64String(pdfStream.ToArray());
-        }
+        return Convert.ToBase64String(File.ReadAllBytes(pdfPath));
     }
 }
